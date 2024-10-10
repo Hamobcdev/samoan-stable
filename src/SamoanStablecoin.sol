@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "lib/openzeppelin-contracts/contracts/token/ERC20/extensions/ERC20Pausable.sol";
+import "lib/chainlink-brownie-contracts/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 contract SamoanStablecoin is ERC20, AccessControl, ReentrancyGuard, Pausable {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -21,11 +22,15 @@ contract SamoanStablecoin is ERC20, AccessControl, ReentrancyGuard, Pausable {
     event PriceUpdated(uint256 newPrice);
 
     constructor(address _priceFeed) ERC20("Samoan Stablecoin", "SAMOA") {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(MINTER_ROLE, msg.sender);
-        _setupRole(BURNER_ROLE, msg.sender);
-        _setupRole(PAUSER_ROLE, msg.sender);
-        _setupRole(PRICE_UPDATER_ROLE, msg.sender);
+        // Grant the DEFAULT_ADMIN_ROLE to the contract deployer
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+
+        // Grant the minter, burner, pauser, and price updater roles to the deployer
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(MINTER_ROLE, msg.sender);
+        _grantRole(BURNER_ROLE, msg.sender);
+        _grantRole(PAUSER_ROLE, msg.sender);
+        _grantRole(PRICE_UPDATER_ROLE, msg.sender);
 
         priceFeed = AggregatorV3Interface(_priceFeed);
         updatePrice();
@@ -67,7 +72,7 @@ contract SamoanStablecoin is ERC20, AccessControl, ReentrancyGuard, Pausable {
     // Override required by Solidity
     function supportsInterface(
         bytes4 interfaceId
-    ) public view override(ERC20, AccessControl) returns (bool) {
+    ) public view override(AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 }
